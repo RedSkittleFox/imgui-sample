@@ -1,12 +1,12 @@
-name: CMake Emscripten Windows Build and Deploy
+name: Build and Deploy ImGui Sample
 
 on:
   push:
     branches: [ "main" ]
 
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+permissions:
+  id-token: write
+  pages: write
 
 jobs:
   build:
@@ -14,38 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install Emscripten
-      run: |
-        apt update 
-        apt-get install -y cmake 
-        git clone https://github.com/emscripten-core/emsdk.git 
-        cd emsdk 
-        ./emsdk install latest
-        ./emsdk activate latest
 
-    - name: Configure CMake
-      run: |
-        emsdk/emsdk activate latest
-        source emsdk/emsdk_env.sh
-        mkdir ${{github.workspace}}/build
-        emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-    - name: Build
-      # Build your program with the given configuration
-      run: |
-        source emsdk/emsdk_env.sh
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Configure CMake
-      run: |
-        ls -la ${{github.workspace}}
-        ls -la ${{github.workspace}}/bin
-
-    - name: Upload GitHub Pages artifact
-      uses: actions/upload-pages-artifact@v3.0.1      
+    - uses: redskittlefox/imgui-sample@main
       with:
-        path: "${{github.workspace}}/bin"
-    
-    - name: Deploy GitHub Pages site
-      uses: actions/deploy-pages@v4.0.5
+        cmake-target: imgui_sample_sample 
             

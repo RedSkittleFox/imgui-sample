@@ -1,0 +1,53 @@
+name: Imgui Sample Build and Deploy
+description: Builds and deploys a github sample into github pages.
+
+inputs:
+  cmake-target:
+    description: CMake target name to use
+    default: imgui_sample_sample
+    required: true
+  cmake-build-type:
+    description: CMake configuration
+    default: Release
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v3
+    - name: Install Emscripten
+      shell: bash
+      run: |
+        git clone https://github.com/emscripten-core/emsdk.git 
+        cd emsdk 
+        ./emsdk install latest
+        ./emsdk activate latest
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        emsdk/emsdk activate latest
+        source emsdk/emsdk_env.sh
+        mkdir ${{github.workspace}}/build
+        wget https://raw.githubusercontent.com/ocornut/imgui/master/examples/libs/emscripten/shell_minimal.html -O ${{github.workspace}}/build/shell_minimal.html
+        sed -i '/project(/a set(CMAKE_EXECUTABLE_SUFFIX ".html")' ${{github.workspace}}/CMakeLists.txt # Change extension, it has to be done after the project declaration due to how the toolchain is loaded
+        sed -i '/project(/a set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${{github.workspace}}/build/shell_minimal.html")' ${{github.workspace}}/CMakeLists.txt 
+        emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{inputs.BUILD_TYPE}}
+
+    - name: Build
+      # Build your program with the given configuration
+      shell: bash
+      run: |
+        source emsdk/emsdk_env.sh
+        cmake --build ${{github.workspace}}/build --config ${{inputs.cmake-build-type}} --target ${{inputs.cmake-target}}
+        ls -la ${{github.workspace}}/bin/
+        cp ${{github.workspace}}/bin/${{inputs.cmake-target}}.html ${{github.workspace}}/bin/index.html
+        
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v3.0.1      
+      with:
+        path: "${{github.workspace}}/bin"
+    
+    - name: Deploy GitHub Pages site
+      uses: actions/deploy-pages@v4.0.5
+            
