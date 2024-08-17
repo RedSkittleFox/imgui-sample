@@ -1,4 +1,4 @@
-name: CMake-Ninja MSVC Windows Build
+name: CMake MSVC Windows Build
 
 on:
   push:
